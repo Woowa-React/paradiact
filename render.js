@@ -1,5 +1,3 @@
-// 2일차 (5/11)
-
 function createNode({type, props}) {
   const dom = type === 'TEXT' ? document.createTextNode('') : document.createElement(type);
 
@@ -22,6 +20,21 @@ function createDomTree(reactElement) {
   return dom;
 }
 
-function render(reactElement, root) {
+function mount(reactElement, root) {
   root.appendChild(createDomTree(reactElement));
+}
+
+function render(newVNode, container) {
+  const oldVNode = container._prevVNode;
+
+  if (!oldVNode) {
+    // 최초 reder 시에만 실행
+    mount(newVNode, container);
+  } else {
+    // 2 번째부터는 항상 이 분기로 들어와서 patch 실행
+    // patch(container, oldVNode, newVNode);
+    console.log('비교를 시작합니다!', oldVNode, 'vs', newVNode);
+  }
+
+  container._prevVNode = newVNode;
 }

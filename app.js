@@ -1,19 +1,37 @@
-const myApp = createElement(
+const firstApp = createElement(
   'div',
   {className: 'box'},
-  createElement('h1', {id: 'title'}, '나의 미니 리액트 완성!'),
-  createElement('p', null, '오늘 1일차와 2일차 목표를 달성했습니다.'),
+  createElement('h1', {id: 'title'}, '안녕'),
+  createElement('p', null, '첫 번째 렌더링입니다.'),
   createElement(
     'ul',
     null,
     createElement('li', null, 'Virtual DOM 설계'),
-    createElement('li', null, 'Recursive Rendering 구현')
+    createElement('li', null, 'Recursive Rendering 구현'),
+    createElement('li', null, 'Reconciliation 준비')
   )
 );
 
-// 2. 실제 화면에 그리기
-const rootElement = document.getElementById('root');
-render(myApp, rootElement);
+const secondApp = createElement(
+  'div',
+  {className: 'box'},
+  createElement('h1', {id: 'title'}, '반가워'),
+  createElement('p', null, '두 번째 렌더링입니다.'),
+  createElement(
+    'ul',
+    null,
+    createElement('li', null, 'Virtual DOM 설계'),
+    createElement('li', null, 'Recursive Rendering 구현'),
+    createElement('li', null, 'Reconciliation 준비 완료')
+  )
+);
 
-// 3. 성공 확인 콘솔
-console.log('렌더링이 완료되었습니다!');
+const rootElement = document.getElementById('root');
+render(firstApp, rootElement);
+
+console.log('첫 번째 렌더링이 완료되었습니다!', rootElement._prevVNode);
+
+setTimeout(() => {
+  render(secondApp, rootElement);
+  console.log('두 번째 렌더링이 완료되었습니다!', rootElement._prevVNode);
+}, 2000);
