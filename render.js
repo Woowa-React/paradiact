@@ -1,3 +1,10 @@
+const PATCH_TYPE = {
+  INSERT: 'INSERT',
+  REMOVE: 'REMOVE',
+  REPLACE: 'REPLACE',
+  TEXT_UPDATE: 'TEXT_UPDATE',
+};
+
 function createNode({type, props}) {
   const dom = type === 'TEXT' ? document.createTextNode('') : document.createElement(type);
 
@@ -28,13 +35,94 @@ function render(newVNode, container) {
   const oldVNode = container._prevVNode;
 
   if (!oldVNode) {
-    // 최초 reder 시에만 실행
     mount(newVNode, container);
   } else {
-    // 2 번째부터는 항상 이 분기로 들어와서 patch 실행
-    // patch(container, oldVNode, newVNode);
-    console.log('비교를 시작합니다!', oldVNode, 'vs', newVNode);
+    const patches = diff(container, oldVNode, newVNode);
+    commit(patches);
   }
 
   container._prevVNode = newVNode;
+}
+
+function diff(parentDom, oldVNode, newVNode, index = 0, patches = []) {
+  const currentDom = parentDom.childNodes[index];
+
+  if (!oldVNode) {
+    patches.push({
+      type: PATCH_TYPE.INSERT,
+      parentDom,
+      newVNode,
+      index,
+    });
+
+    return patches;
+  }
+
+  if (!newVNode) {
+    patches.push({
+      type: PATCH_TYPE.REMOVE,
+      parentDom,
+      dom: currentDom,
+    });
+
+    return patches;
+  }
+
+  if (oldVNode.type !== newVNode.type) {
+    patches.push({
+      type: PATCH_TYPE.REPLACE,
+      parentDom,
+      oldDom: currentDom,
+      newVNode,
+    });
+
+    return patches;
+  }
+
+  if (newVNode.type === 'TEXT') {
+    if (oldVNode.props.nodeValue !== newVNode.props.nodeValue) {
+      patches.push({
+        type: PATCH_TYPE.TEXT_UPDATE,
+        dom: currentDom,
+        value: newVNode.props.nodeValue,
+      });
+    }
+
+    return patches;
+  }
+
+  const maxLength = Math.max(oldVNode.props.children.length, newVNode.props.children.length);
+
+  for (let i = 0; i < maxLength; i++) {
+    diff(currentDom, oldVNode.props.children[i], newVNode.props.children[i], i, patches);
+  }
+
+  return patches;
+}
+
+function commit(patches) {
+  patches.forEach((patch) => {
+    if (patch.type === PATCH_TYPE.TEXT_UPDATE) {
+      patch.dom.nodeValue = patch.value;
+    }
+
+    if (patch.type === PATCH_TYPE.INSERT) {
+      const newDom = createDomTree(patch.newVNode);
+      const nextDom = patch.parentDom.childNodes[patch.index];
+
+      if (nextDom) {
+        patch.parentDom.insertBefore(newDom, nextDom);
+      } else {
+        patch.parentDom.appendChild(newDom);
+      }
+    }
+
+    if (patch.type === PATCH_TYPE.REMOVE) {
+      patch.parentDom.removeChild(patch.dom);
+    }
+
+    if (patch.type === PATCH_TYPE.REPLACE) {
+      patch.parentDom.replaceChild(createDomTree(patch.newVNode), patch.oldDom);
+    }
+  });
 }
